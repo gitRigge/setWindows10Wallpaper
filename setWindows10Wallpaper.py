@@ -1,12 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""    SYNOPSIS
-
-        Usage:  setWindows10Wallpaper.py
-            [-b|-s|--bing|--spotlight]
-            [-h|--help]
-
-    DESCRIPTION
+"""    DESCRIPTION
 
         This tool can either set the latest locally stored Microsoft
         Spotlight (--spotlight) image as Desktop wallpaper. Or it fetches
@@ -28,22 +22,14 @@
 
         0: command executed successfully
         2: command failed with errors
-
-    AUTHOR
-
-        $author$
-
-    VERSION
-
-        $version$
 """
 
 import ctypes
 import datetime
 import glob
-import getopt
 import imghdr
 import json
+import optparse
 import os
 import requests
 import struct
@@ -54,7 +40,7 @@ import win32con
 __author__ = "Roland Rickborn (gitRigge)"
 __copyright__ = "Copyright (C) 2019 Roland Rickborn"
 __license__ = "MIT"
-__version__ = "0.1"
+__version__ = "0.2"
 __status__ = "Development"
 
 def setWallpaperWithCtypes(path):
@@ -166,43 +152,38 @@ def getLatestWallpaperRemote():
         handler.write(img_data)
     return os.path.join(dir_path, image_name)
 
-def usage():
+def usage(option, opt, value, parser):
     """Shows help of this tool"""
-    myDocstring = __doc__
+    myDocstring = ""
+    if opt in ["-i", "--info"]:
+        myDocstring = myDocstring+"\n"+__doc__
+        myDocstring = myDocstring+"\n    AUTHOR\n\n        $author$\n"
+        parser.print_help()
+    if opt in ["-V", "-i", "--version", "--info"]:
+        myDocstring = myDocstring+"\n    VERSION\n\n        $version$"
     myDocstring = myDocstring.replace('$version$', __version__)
     myDocstring = myDocstring.replace('$author$',__author__)
     print(myDocstring)
     sys.exit(0)
 
 if __name__ == "__main__":
-    if len(sys.argv) > 1 and len(sys.argv) < 3:
-        try:
-            opts, args = getopt.getopt(sys.argv[1:], "bsh?", ["help", "bing", "spotlight"])
-        except getopt.GetoptError as err:
-            print(err)
-            usage()
-            sys.exit(2)
-    elif len(sys.argv) == 1:
+    parser = optparse.OptionParser()
+    parser.add_option("-b", "--bing", action="store_true", dest="bing", default=False,
+        help="Set Bing Image Of The Day as wallpaper")
+    parser.add_option("-s", "--spotlight", action="store_true", dest="spotlight", default=True,
+        help="Set Microsoft Spotlight as wallpaper [default]")
+    parser.add_option("-V", "--version", action="callback", callback=usage, help="Show version")
+    parser.add_option("-i", "--info", action="callback", callback=usage, help="Show license and author information")
+    (options, args) = parser.parse_args()
+    path = ""
+    if options.bing:
+        path = getLatestWallpaperRemote()
+        setWallpaperWithCtypes(path)
+    elif options.spotlight:
         path = getLatestWallpaperLocal()
         setWallpaperWithCtypes(path)
-        sys.exit(0)
     else:
-        print("ERROR: unhandled option")
-        usage()
-        sys.exit(2)
-    path = ""
-    for opt, arg in opts:
-        if opt in ("-h", "--help", "-?"):
-            usage()
-            sys.exit(0)
-        elif opt in ("-b", "--bing"):
-            path = getLatestWallpaperRemote()
-            setWallpaperWithCtypes(path)
-        elif opt in ("-s", "--spotlight"):
-            path = getLatestWallpaperLocal()
-            setWallpaperWithCtypes(path)
-        else:
-            print("ERROR: unhandled option")
-            usage()
-            sys.exit(2)
+             print("ERROR: unhandled option")
+             usage()
+             sys.exit(2)
     sys.exit(0)
