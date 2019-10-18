@@ -5,7 +5,7 @@
         This tool can either set the latest locally stored Microsoft
         Spotlight (--spotlight) image as Desktop wallpaper. Or it fetches
         the latest image from Bing's Image Of The Day (--bing) collection
-        and set's it as wallpaper.
+        and set's it as wallpaper. Or it does randomly one of the two (--random)
         Default: Microsoft Spotlight
 
     EXAMPLES
@@ -31,6 +31,7 @@ import imghdr
 import json
 import optparse
 import os
+import random
 import requests
 import struct
 import sys
@@ -169,17 +170,29 @@ def usage(option, opt, value, parser):
 if __name__ == "__main__":
     parser = optparse.OptionParser()
     parser.add_option("-b", "--bing", action="store_true", dest="bing", default=False,
-        help="Set Bing Image Of The Day as wallpaper")
+        help="set Bing Image Of The Day as wallpaper")
     parser.add_option("-s", "--spotlight", action="store_true", dest="spotlight", default=True,
-        help="Set Microsoft Spotlight as wallpaper [default]")
-    parser.add_option("-V", "--version", action="callback", callback=usage, help="Show version")
-    parser.add_option("-i", "--info", action="callback", callback=usage, help="Show license and author information")
+        help="set Microsoft Spotlight as wallpaper [default]")
+    parser.add_option("-r", "--random", action="store_true", dest="random", default=False,
+        help="set wallpaper from random source")
+    parser.add_option("-V", "--version", action="callback", callback=usage,
+        help="show version")
+    parser.add_option("-i", "--info", action="callback", callback=usage,
+        help="show license and author information")
     (options, args) = parser.parse_args()
     path = ""
+    if options.random:
+        myChoice = random.choice(['bing', 'spotlight'])
+        if myChoice == 'bing':
+            options.bing = True
+        elif myChoice == 'spotlight':
+            options.spotlight = True
     if options.bing:
+        print("bing")
         path = getLatestWallpaperRemote()
         setWallpaperWithCtypes(path)
     elif options.spotlight:
+        print("spotlight")
         path = getLatestWallpaperLocal()
         setWallpaperWithCtypes(path)
     else:

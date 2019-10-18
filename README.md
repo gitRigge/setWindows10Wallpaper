@@ -6,7 +6,7 @@ Sets Windows 10 wallpaper to Microsoft Spotlight or Bing Image Of The Day
 This tool can either set the latest locally stored Microsoft
 Spotlight (--spotlight) image as Desktop wallpaper. Or it fetches
 the latest image from Bing's Image Of The Day (--bing) collection
-and set's it as wallpaper.
+and set's it as wallpaper. Or it does randomly one of the two (--random)
 Default: Microsoft Spotlight
 
 ## USAGE
