@@ -41,7 +41,7 @@ import win32con
 __author__ = "Roland Rickborn (gitRigge)"
 __copyright__ = "Copyright (C) 2019 Roland Rickborn"
 __license__ = "MIT"
-__version__ = "0.2"
+__version__ = "0.3"
 __status__ = "Development"
 
 def setWallpaperWithCtypes(path):
@@ -128,7 +128,7 @@ def getScreenHeight():
     height = win32api.GetSystemMetrics(1)
     return height
 
-def getLatestWallpaperRemote():
+def getLatestBingWallpaperRemote():
     """Retrieves the URL of Bing's Image Of The Day image, downloads the image,
     stores it in a temporary folder and returns the path to it
     """
@@ -147,7 +147,7 @@ def getLatestWallpaperRemote():
 
     # download and save image
     img_data = requests.get(full_image_url).content
-    dir_path = os.path.join(os.environ['TEMP'],'BingBackgroundImages')
+    dir_path = os.path.join(os.environ['TEMP'],'BingWallpaperImages')
     os.makedirs(dir_path, exist_ok=True)
     with open(os.path.join(dir_path, image_name), 'wb') as handler:
         handler.write(img_data)
@@ -188,11 +188,9 @@ if __name__ == "__main__":
         elif myChoice == 'spotlight':
             options.spotlight = True
     if options.bing:
-        print("bing")
-        path = getLatestWallpaperRemote()
+        path = getLatestBingWallpaperRemote()
         setWallpaperWithCtypes(path)
     elif options.spotlight:
-        print("spotlight")
         path = getLatestWallpaperLocal()
         setWallpaperWithCtypes(path)
     else:
