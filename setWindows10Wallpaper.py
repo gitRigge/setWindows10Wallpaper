@@ -32,6 +32,7 @@ import json
 import optparse
 import os
 import random
+import re
 import requests
 import struct
 import sys
@@ -41,7 +42,7 @@ import win32con
 __author__ = "Roland Rickborn (gitRigge)"
 __copyright__ = "Copyright (C) 2019 Roland Rickborn"
 __license__ = "MIT"
-__version__ = "0.3"
+__version__ = "0.4"
 __status__ = "Development"
 
 def setWallpaperWithCtypes(path):
@@ -128,6 +129,66 @@ def getScreenHeight():
     height = win32api.GetSystemMetrics(1)
     return height
 
+def getGeneratedImageName(full_image_url):
+    """Expects URL to an image, retrieves its file extension and returns
+    an image name based on the current date and with the correct file
+    extension
+    """
+    image_name = datetime.date.today().strftime("%Y%m%d")
+    image_extension = full_image_url.split(".")[-1]
+    image_name = image_name + "." + image_extension
+    return image_name
+
+def downloadImage(full_image_url, image_name):
+    """Creates the folder 'WarietyWallpaperImages' in the temporary
+    locations if it does not yet exist. Downloads the image given
+    by 'full_image_url', stores it there and returns the path to it
+    """
+    img_data = requests.get(full_image_url).content
+    dir_path = os.path.join(os.environ['TEMP'],'WarietyWallpaperImages')
+    os.makedirs(dir_path, exist_ok=True)
+    with open(os.path.join(dir_path, image_name), 'wb') as handler:
+        handler.write(img_data)
+    return os.path.join(dir_path, image_name)
+
+def getLatestWikimediaWallpaperRemote():
+    """Retrieves the URL of the latest image of Wikimedia Picture Of The Day,
+    downloads the image, stores it in a temporary folder and returns the path
+    to it
+    """
+    # get image url
+    response = requests.get("https://commons.wikimedia.org/wiki/Hauptseite")
+    match = re.search('.*mainpage-potd.*src=\"([^\"]*)\".*', response.text)
+    image_url = match.group(1)
+    full_image_url = image_url.replace('500px','1920px')
+
+    # image's name
+    image_name = getGeneratedImageName(full_image_url)
+
+    # download and save image
+    return downloadImage(full_image_url, image_name)
+
+def getLatestFlickrWallpaperRemote():
+    """Retrieves the URL of the latest image of Peter Levi's Flickr Collection,
+    downloads the image, stores it in a temporary folder and returns the path
+    to it
+    """
+    # get image url
+    response = requests.get("https://www.flickr.com/photos/peterlevi/")
+    match = re.search('([0-9]{11})_.*\.jpg\)', response.text)
+    image_id = match.group(1)
+    image_url = "https://www.flickr.com/photos/peterlevi/"+image_id+"/sizes/h/"
+    response = requests.get(image_url)
+    pattern = 'http.*'+image_id+'.*_h\.jpg'
+    match = re.search(pattern, response.text)
+    full_image_url = match.group(0)
+
+    # image's name
+    image_name = getGeneratedImageName(full_image_url)
+
+    # download and save image
+    return downloadImage(full_image_url, image_name)
+
 def getLatestBingWallpaperRemote():
     """Retrieves the URL of Bing's Image Of The Day image, downloads the image,
     stores it in a temporary folder and returns the path to it
@@ -141,17 +202,10 @@ def getLatestBingWallpaperRemote():
     full_image_url = "https://www.bing.com" + image_url
 
     # image's name
-    image_name = datetime.date.today().strftime("%Y%m%d")
-    image_extension = image_url.split(".")[-1]
-    image_name = image_name + "." + image_extension
+    image_name = getGeneratedImageName(full_image_url)
 
     # download and save image
-    img_data = requests.get(full_image_url).content
-    dir_path = os.path.join(os.environ['TEMP'],'BingWallpaperImages')
-    os.makedirs(dir_path, exist_ok=True)
-    with open(os.path.join(dir_path, image_name), 'wb') as handler:
-        handler.write(img_data)
-    return os.path.join(dir_path, image_name)
+    return downloadImage(full_image_url, image_name)
 
 def usage(option, opt, value, parser):
     """Shows help of this tool"""
@@ -171,10 +225,14 @@ if __name__ == "__main__":
     parser = optparse.OptionParser()
     parser.add_option("-b", "--bing", action="store_true", dest="bing", default=False,
         help="set Bing Image Of The Day as wallpaper")
+    parser.add_option("-f", "--flickr", action="store_true", dest="flickr", default=False,
+        help="set Peter Levi's Flickr Collection as wallpaper")
     parser.add_option("-s", "--spotlight", action="store_true", dest="spotlight", default=True,
         help="set Microsoft Spotlight as wallpaper [default]")
     parser.add_option("-r", "--random", action="store_true", dest="random", default=False,
         help="set wallpaper from random source")
+    parser.add_option("-w", "--wikimedia", action="store_true", dest="wikimedia", default=False,
+        help="set Wikimedia Picture Of The Day as wallpaper")
     parser.add_option("-V", "--version", action="callback", callback=usage,
         help="show version")
     parser.add_option("-i", "--info", action="callback", callback=usage,
@@ -182,19 +240,22 @@ if __name__ == "__main__":
     (options, args) = parser.parse_args()
     path = ""
     if options.random:
-        myChoice = random.choice(['bing', 'spotlight'])
+        myChoice = random.choice(['bing', 'flickr', 'spotlight', 'wikimedia'])
         if myChoice == 'bing':
             options.bing = True
+        elif myChoice == 'flickr':
+            options.flickr = True
         elif myChoice == 'spotlight':
             options.spotlight = True
+        elif myChoice == 'wikimedia':
+            options.wikimedia = True
     if options.bing:
         path = getLatestBingWallpaperRemote()
-        setWallpaperWithCtypes(path)
+    elif options.flickr:
+        path = getLatestFlickrWallpaperRemote()
+    elif options.wikimedia:
+        path = getLatestWikimediaWallpaperRemote()
     elif options.spotlight:
         path = getLatestWallpaperLocal()
-        setWallpaperWithCtypes(path)
-    else:
-             print("ERROR: unhandled option")
-             usage()
-             sys.exit(2)
+    setWallpaperWithCtypes(path)
     sys.exit(0)
