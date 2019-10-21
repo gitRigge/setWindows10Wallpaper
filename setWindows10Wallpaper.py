@@ -129,6 +129,32 @@ def getScreenHeight():
     height = win32api.GetSystemMetrics(1)
     return height
 
+def writeDatabase():
+    dir_path = os.path.join(os.environ['LOCALAPPDATA'],'WarietyWallpaperImages')
+    os.makedirs(dir_path, exist_ok=True)
+    db_file = os.path.join(dir_path,'wariety.db')
+    conn = sqlite3.connect(db_file)
+    c = conn.cursor()
+
+    # Create table
+    #c.execute("CREATE TABLE wallpapers IF NOT EXISTS (id)"
+
+    # Insert a row of data
+    #c.execute("INSERT INTO stocks VALUES ('2006-01-05','BUY','RHAT',100,35.14)")
+
+    # Save (commit) the changes
+    #conn.commit()
+
+    # We can also close the connection if we are done with it.
+    # Just be sure any changes have been committed or they will be lost.
+    #conn.close()
+
+def readDatabase():
+    pass
+
+def checkDatabase():
+    pass
+
 def getGeneratedImageName(full_image_url):
     """Expects URL to an image, retrieves its file extension and returns
     an image name based on the current date and with the correct file
