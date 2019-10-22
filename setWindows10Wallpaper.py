@@ -34,6 +34,8 @@ import os
 import random
 import re
 import requests
+import shutil
+import sqlite3
 import struct
 import sys
 import win32api
@@ -42,7 +44,7 @@ import win32con
 __author__ = "Roland Rickborn (gitRigge)"
 __copyright__ = "Copyright (C) 2019 Roland Rickborn"
 __license__ = "MIT"
-__version__ = "0.4"
+__version__ = "0.5"
 __status__ = "Development"
 
 def setWallpaperWithCtypes(path):
@@ -52,16 +54,28 @@ def setWallpaperWithCtypes(path):
 
 def getLatestWallpaperLocal():
     """Loops through all locally stored Windows Spotlight assets
-    and returns the latest asset which has the same orientation as the screen
+    and copies and returns the latest asset which has the same orientation as the screen
     """
     list_of_files = sorted(glob.glob(os.environ['LOCALAPPDATA']
         +r'\Packages\Microsoft.Windows.ContentDeliveryManager_cw5n1h2txyewy\LocalState\Assets'
         +'\*'), key=os.path.getmtime, reverse=True)
     for asset in list_of_files:
-        if imghdr.what(asset) in ['jpeg', 'jpg', 'png', 'gif']:
+        extension = imghdr.what(asset)
+        if extension in ['jpeg', 'jpg', 'png']:
             if isImageLandscape(asset) == isScreenLandscape():
-                return asset
-    sys.exit(2)
+                # Generate pseudo url
+                full_image_url = os.path.split(asset)[1]
+                if not existsImageInDatabase(full_image_url):
+                    image_name = getGeneratedImageName(asset+'.'+extension)
+                    addImageToDatabase(full_image_url, image_name, "spotlight")
+                    dir_path = os.path.join(os.environ['TEMP'],'WarietyWallpaperImages')
+                    os.makedirs(dir_path, exist_ok=True)
+                    full_image_path = os.path.join(dir_path, image_name)
+                    shutil.copyfile(asset, full_image_path)
+                    updateImageInDatabase(full_image_url, full_image_path)
+                    return full_image_path
+                else:
+                    return getImagePathFromDatabase(full_image_url)
 
 def get_image_size(fname):
     """Checks if the asset given by 'fname' is of type 'png', 'jpeg' or 'gif',
@@ -129,7 +143,11 @@ def getScreenHeight():
     height = win32api.GetSystemMetrics(1)
     return height
 
-def writeDatabase():
+def addImageToDatabase(full_image_url, image_name, image_source):
+    """Creates a database if it does not yet exist and writes full image url
+    given by 'full_image_url' as primary key, image name given by 'image_name'
+    and image source given by 'image_source' to a database
+    """
     dir_path = os.path.join(os.environ['LOCALAPPDATA'],'WarietyWallpaperImages')
     os.makedirs(dir_path, exist_ok=True)
     db_file = os.path.join(dir_path,'wariety.db')
@@ -137,30 +155,102 @@ def writeDatabase():
     c = conn.cursor()
 
     # Create table
-    #c.execute("CREATE TABLE wallpapers IF NOT EXISTS (id)"
+    c.execute("""
+        CREATE TABLE IF NOT EXISTS wallpapers (
+        id integer primary key,
+        iurl text unique,
+        iname text,
+        ipath text,
+        isource text)
+        """)
 
     # Insert a row of data
-    #c.execute("INSERT INTO stocks VALUES ('2006-01-05','BUY','RHAT',100,35.14)")
+    c.execute("""INSERT INTO wallpapers (iurl, iname, isource)
+        VALUES (?,?,?)""", (full_image_url, image_name, image_source))
+    
+    # Save (commit) the changes
+    conn.commit()
+
+    # Close connection
+    conn.close()
+
+def getImagePathFromDatabase(full_image_url):
+    """Reads database and returns full image path based on full image url
+    given by 'full_image_url'  
+    """
+    dir_path = os.path.join(os.environ['LOCALAPPDATA'],'WarietyWallpaperImages')
+    os.makedirs(dir_path, exist_ok=True)
+    db_file = os.path.join(dir_path,'wariety.db')
+    full_image_path = ""
+    conn = sqlite3.connect(db_file)
+    c = conn.cursor()
+
+    # Create table
+    c.execute("""
+        CREATE TABLE IF NOT EXISTS wallpapers (
+        id integer primary key,
+        iurl text unique,
+        iname text,
+        ipath text,
+        isource text)
+        """)
+
+    # Select a row
+    c.execute("SELECT ipath FROM wallpapers WHERE iurl = ?", (full_image_url,))
+    full_image_path = os.path.abspath(c.fetchone()[0])
+    conn.close()
+    return full_image_path
+
+def updateImageInDatabase(full_image_url, full_image_path):
+    """Updates image full path given by 'full_image_path' in database"""
+    dir_path = os.path.join(os.environ['LOCALAPPDATA'],'WarietyWallpaperImages')
+    os.makedirs(dir_path, exist_ok=True)
+    db_file = os.path.join(dir_path,'wariety.db')
+    conn = sqlite3.connect(db_file)
+    c = conn.cursor()
+
+    # Update a row
+    c.execute("UPDATE wallpapers SET ipath = ? WHERE iurl = ?", (full_image_path, full_image_url))
 
     # Save (commit) the changes
-    #conn.commit()
+    conn.commit()
 
-    # We can also close the connection if we are done with it.
-    # Just be sure any changes have been committed or they will be lost.
-    #conn.close()
+    # Close connection
+    conn.close()
 
-def readDatabase():
-    pass
+def existsImageInDatabase(full_image_url):
+    """Checks whether an image given by 'full_image_url' exists already in databse"""
+    dir_path = os.path.join(os.environ['LOCALAPPDATA'],'WarietyWallpaperImages')
+    db_file = os.path.join(dir_path,'wariety.db')
+    conn = sqlite3.connect(db_file)
+    c = conn.cursor()
 
-def checkDatabase():
-    pass
+    # Create table
+    c.execute("""
+        CREATE TABLE IF NOT EXISTS wallpapers (
+        id integer primary key,
+        iurl text unique,
+        iname text,
+        ipath text,
+        isource text)
+        """)
+
+    # Select a row
+    c.execute("SELECT id FROM wallpapers WHERE iurl = ?", (full_image_url,))
+
+    if c.fetchone() is not None:
+        conn.close()
+        return True
+    else:
+        conn.close()
+        return False
 
 def getGeneratedImageName(full_image_url):
     """Expects URL to an image, retrieves its file extension and returns
     an image name based on the current date and with the correct file
     extension
     """
-    image_name = datetime.date.today().strftime("%Y%m%d")
+    image_name = datetime.datetime.now().strftime("%Y%m%d%H%M%S")
     image_extension = full_image_url.split(".")[-1]
     image_name = image_name + "." + image_extension
     return image_name
@@ -177,6 +267,55 @@ def downloadImage(full_image_url, image_name):
         handler.write(img_data)
     return os.path.join(dir_path, image_name)
 
+def getRandomImageFromDatabase():
+    """Returns either full image path of a random image from the database or
+    from any of the other image sources
+    """
+    dir_path = os.path.join(os.environ['LOCALAPPDATA'],'WarietyWallpaperImages')
+    os.makedirs(dir_path, exist_ok=True)
+    full_image_path = ""
+    db_file = os.path.join(dir_path,'wariety.db')
+    full_image_path = ""
+    conn = sqlite3.connect(db_file)
+    c = conn.cursor()
+
+    # Create table
+    c.execute("""
+        CREATE TABLE IF NOT EXISTS wallpapers (
+        id integer primary key,
+        iurl text unique,
+        iname text,
+        ipath text,
+        isource text)
+        """)
+
+    c.execute("SELECT id, ipath FROM wallpapers")
+
+    result = c.fetchall()
+    conn.close()
+
+    max = len(result)
+    try:
+        choice = random.randint(0, int(max+max*.5))
+        full_image_path = os.path.abspath(result[choice][1])
+        return full_image_path
+    except:
+        full_image_path = getRandomImageFromAnySource()
+        return full_image_path
+
+def getRandomImageFromAnySource():
+    """Returns full image path of any image source
+    """
+    myChoice = random.choice(['bing', 'flickr', 'spotlight', 'wikimedia'])
+    if myChoice == 'bing':
+        return getLatestBingWallpaperRemote()
+    elif myChoice == 'flickr':
+        return getLatestFlickrWallpaperRemote()
+    elif myChoice == 'spotlight':
+        return getLatestWallpaperLocal()
+    elif myChoice == 'wikimedia':
+        return getLatestWikimediaWallpaperRemote()
+
 def getLatestWikimediaWallpaperRemote():
     """Retrieves the URL of the latest image of Wikimedia Picture Of The Day,
     downloads the image, stores it in a temporary folder and returns the path
@@ -191,8 +330,17 @@ def getLatestWikimediaWallpaperRemote():
     # image's name
     image_name = getGeneratedImageName(full_image_url)
 
-    # download and save image
-    return downloadImage(full_image_url, image_name)
+    # Check and maintain DB
+    if not existsImageInDatabase(full_image_url):
+        addImageToDatabase(full_image_url, image_name, "wikimedia")
+        # download and save image
+        full_image_path = downloadImage(full_image_url, image_name)
+        updateImageInDatabase(full_image_url, full_image_path)
+    else:
+        full_image_path = getImagePathFromDatabase(full_image_url)
+
+    # Return full path to image
+    return full_image_path
 
 def getLatestFlickrWallpaperRemote():
     """Retrieves the URL of the latest image of Peter Levi's Flickr Collection,
@@ -200,10 +348,10 @@ def getLatestFlickrWallpaperRemote():
     to it
     """
     # get image url
-    response = requests.get("https://www.flickr.com/photos/peterlevi/")
-    match = re.search('([0-9]{11})_.*\.jpg\)', response.text)
+    response = requests.get("https://www.flickr.com/photos/peter-levi/")
+    match = re.search('([0-9]{10})_.*\.jpg\)', response.text)
     image_id = match.group(1)
-    image_url = "https://www.flickr.com/photos/peterlevi/"+image_id+"/sizes/h/"
+    image_url = "https://www.flickr.com/photos/peter-levi/"+image_id+"/sizes/h/"
     response = requests.get(image_url)
     pattern = 'http.*'+image_id+'.*_h\.jpg'
     match = re.search(pattern, response.text)
@@ -212,8 +360,17 @@ def getLatestFlickrWallpaperRemote():
     # image's name
     image_name = getGeneratedImageName(full_image_url)
 
-    # download and save image
-    return downloadImage(full_image_url, image_name)
+    # Check and maintain DB
+    if not existsImageInDatabase(full_image_url):
+        addImageToDatabase(full_image_url, image_name, "flickr")
+        # download and save image
+        full_image_path = downloadImage(full_image_url, image_name)
+        updateImageInDatabase(full_image_url, full_image_path)
+    else:
+        full_image_path = getImagePathFromDatabase(full_image_url)
+
+    # Return full path to image
+    return full_image_path
 
 def getLatestBingWallpaperRemote():
     """Retrieves the URL of Bing's Image Of The Day image, downloads the image,
@@ -230,8 +387,17 @@ def getLatestBingWallpaperRemote():
     # image's name
     image_name = getGeneratedImageName(full_image_url)
 
-    # download and save image
-    return downloadImage(full_image_url, image_name)
+    # Check and maintain DB
+    if not existsImageInDatabase(full_image_url):
+        addImageToDatabase(full_image_url, image_name, "bing")
+        # download and save image
+        full_image_path = downloadImage(full_image_url, image_name)
+        updateImageInDatabase(full_image_url, full_image_path)
+    else:
+        full_image_path = getImagePathFromDatabase(full_image_url)
+
+    # Return full path to image
+    return full_image_path
 
 def usage(option, opt, value, parser):
     """Shows help of this tool"""
@@ -266,16 +432,8 @@ if __name__ == "__main__":
     (options, args) = parser.parse_args()
     path = ""
     if options.random:
-        myChoice = random.choice(['bing', 'flickr', 'spotlight', 'wikimedia'])
-        if myChoice == 'bing':
-            options.bing = True
-        elif myChoice == 'flickr':
-            options.flickr = True
-        elif myChoice == 'spotlight':
-            options.spotlight = True
-        elif myChoice == 'wikimedia':
-            options.wikimedia = True
-    if options.bing:
+        path = getRandomImageFromDatabase()
+    elif options.bing:
         path = getLatestBingWallpaperRemote()
     elif options.flickr:
         path = getLatestFlickrWallpaperRemote()
