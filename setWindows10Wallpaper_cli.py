@@ -10,8 +10,8 @@
 
     EXAMPLES
 
-        setWindows10Wallpaper.py
-        setWindows10Wallpaper.py --spotlight
+        setWindows10Wallpaper_cli.py
+        setWindows10Wallpaper_cli.py --spotlight
 
     REQUIREMENTS
 
