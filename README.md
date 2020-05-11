@@ -20,7 +20,8 @@ Default: Microsoft Spotlight
       -b, --bing       set Bing Image Of The Day as wallpaper
       -f, --flickr     set Peter Levi's Flickr Collection as wallpaper
       -s, --spotlight  set Microsoft Spotlight as wallpaper [default]
-      -r, --random     set wallpaper from random source
       -w, --wikimedia  set Wikimedia Picture Of The Day as wallpaper
+      -r, --random     set wallpaper from random source
       -i, --info       show license and author information
       -v, --version    show version
+      -d, --debug      write debug output to logfile
