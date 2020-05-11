@@ -516,7 +516,8 @@ if __name__ == "__main__":
     set_any_option = False
     if args.debug:
         myname = os.path.basename(__file__).split('.')[0]
-        fname = os.path.join(os.path.dirname(os.path.realpath(__file__)), '{}.log'.format(myname))
+        mypath = os.path.join(os.environ['LOCALAPPDATA'],'WarietyWallpaperImages')
+        fname = os.path.join(mypath, '{}.log'.format(myname))
         logging.basicConfig(filename=fname, filemode='a', level=logging.DEBUG,
             format='%(asctime)s - %(levelname)s - %(message)s', datefmt='%Y-%m-%d %H:%M:%S')
         myargs = []

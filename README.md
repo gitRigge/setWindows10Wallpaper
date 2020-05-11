@@ -13,7 +13,7 @@ Default: Microsoft Spotlight
 
     usage: setWindows10Wallpaper_cli.py [-h] [-b] [-f] [-s] [-r] [-w] [-i] [-v]
 
-    Load and show nice Windows background images.
+    Sets Windows 10 wallpaper to Microsoft Spotlight or Bing Image Of The Day.
 
     optional arguments:
       -h, --help       show this help message and exit
