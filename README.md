@@ -11,14 +11,16 @@ Default: Microsoft Spotlight
 
 ## USAGE
 
-    Usage: setWindows10Wallpaper_cli.py [options]
+    usage: setWindows10Wallpaper_cli.py [-h] [-b] [-f] [-s] [-r] [-w] [-i] [-v]
 
-    Options:
+    Load and show nice Windows background images.
+
+    optional arguments:
       -h, --help       show this help message and exit
       -b, --bing       set Bing Image Of The Day as wallpaper
       -f, --flickr     set Peter Levi's Flickr Collection as wallpaper
       -s, --spotlight  set Microsoft Spotlight as wallpaper [default]
       -r, --random     set wallpaper from random source
       -w, --wikimedia  set Wikimedia Picture Of The Day as wallpaper
-      -V, --version    show version
       -i, --info       show license and author information
+      -v, --version    show version
