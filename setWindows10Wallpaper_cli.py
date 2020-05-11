@@ -426,19 +426,30 @@ if __name__ == "__main__":
     parser.add_argument('-v', '--version', help = "show version", action="store_true")
     path = ""
     args = parser.parse_args()
+    set_option = False
     if args.info:
         usage('-i')
+        set_option = True
     if args.version:
         usage('-v')
+        set_option = True
     if args.bing:
         path = getLatestBingWallpaperRemote()
+        set_option = True
     if args.flickr:
         path = getLatestFlickrWallpaperRemote()
+        set_option = True
     if args.spotlight:
         path = getLatestWallpaperLocal()
+        set_option = True
     if args.random:
         path = getRandomImageFromDatabase()
+        set_option = True
     if args.wikimedia:
         path = getLatestWikimediaWallpaperRemote()
+        set_option = True
+    if not set_option:
+        # default
+        path = getLatestWallpaperLocal()
     setWallpaperWithCtypes(path)
     sys.exit(0)
