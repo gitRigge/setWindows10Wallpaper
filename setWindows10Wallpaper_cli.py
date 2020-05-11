@@ -24,27 +24,28 @@
         2: command failed with errors
 """
 
+import argparse
 import ctypes
 import datetime
 import glob
 import imghdr
 import json
-import optparse
 import os
 import random
 import re
-import requests
 import shutil
 import sqlite3
 import struct
 import sys
+
+import requests
 import win32api
 import win32con
 
 __author__ = "Roland Rickborn (gitRigge)"
-__copyright__ = "Copyright (C) 2019 Roland Rickborn"
-__license__ = "MIT"
-__version__ = "0.5"
+__copyright__ = "Copyright (C) 2020 Roland Rickborn"
+__license__ = "MIT License (see https://en.wikipedia.org/wiki/MIT_License)"
+__version__ = "0.6"
 __status__ = "Development"
 
 def setWallpaperWithCtypes(path):
@@ -399,47 +400,45 @@ def getLatestBingWallpaperRemote():
     # Return full path to image
     return full_image_path
 
-def usage(option, opt, value, parser):
+def usage(arg):
     """Shows help of this tool"""
     myDocstring = ""
-    if opt in ["-i", "--info"]:
+    if arg in ["-i", "--info"]:
         myDocstring = myDocstring+"\n"+__doc__
         myDocstring = myDocstring+"\n    AUTHOR\n\n        $author$\n"
         parser.print_help()
-    if opt in ["-V", "-i", "--version", "--info"]:
-        myDocstring = myDocstring+"\n    VERSION\n\n        $version$"
+    elif arg in ["-v", "-i", "--version", "--info"]:
+        myDocstring = myDocstring+"\n    VERSION\n\n        $version$\n"
+        myDocstring = myDocstring+"\n    LICENSE\n\n        $license$\n"
     myDocstring = myDocstring.replace('$version$', __version__)
     myDocstring = myDocstring.replace('$author$',__author__)
+    myDocstring = myDocstring.replace('$license$',__license__)
     print(myDocstring)
-    sys.exit(0)
 
 if __name__ == "__main__":
-    parser = optparse.OptionParser()
-    parser.add_option("-b", "--bing", action="store_true", dest="bing", default=False,
-        help="set Bing Image Of The Day as wallpaper")
-    parser.add_option("-f", "--flickr", action="store_true", dest="flickr", default=False,
-        help="set Peter Levi's Flickr Collection as wallpaper")
-    parser.add_option("-s", "--spotlight", action="store_true", dest="spotlight", default=True,
-        help="set Microsoft Spotlight as wallpaper [default]")
-    parser.add_option("-r", "--random", action="store_true", dest="random", default=False,
-        help="set wallpaper from random source")
-    parser.add_option("-w", "--wikimedia", action="store_true", dest="wikimedia", default=False,
-        help="set Wikimedia Picture Of The Day as wallpaper")
-    parser.add_option("-V", "--version", action="callback", callback=usage,
-        help="show version")
-    parser.add_option("-i", "--info", action="callback", callback=usage,
-        help="show license and author information")
-    (options, args) = parser.parse_args()
+    parser = argparse.ArgumentParser(description='Load and show nice Windows background images.')
+    parser.add_argument('-b', '--bing', help = "set Bing Image Of The Day as wallpaper", action="store_true")
+    parser.add_argument('-f', '--flickr', help = "set Peter Levi's Flickr Collection as wallpaper", action="store_true")
+    parser.add_argument('-s', '--spotlight', help = "set Microsoft Spotlight as wallpaper [default]", action="store_true")
+    parser.add_argument('-r', '--random', help = "set wallpaper from random source", action="store_true")
+    parser.add_argument('-w', '--wikimedia', help = "set Wikimedia Picture Of The Day as wallpaper", action="store_true")
+    parser.add_argument('-i','--info', help = "show license and author information", action="store_true")
+    parser.add_argument('-v', '--version', help = "show version", action="store_true")
     path = ""
-    if options.random:
-        path = getRandomImageFromDatabase()
-    elif options.bing:
+    args = parser.parse_args()
+    if args.info:
+        usage('-i')
+    if args.version:
+        usage('-v')
+    if args.bing:
         path = getLatestBingWallpaperRemote()
-    elif options.flickr:
+    if args.flickr:
         path = getLatestFlickrWallpaperRemote()
-    elif options.wikimedia:
-        path = getLatestWikimediaWallpaperRemote()
-    elif options.spotlight:
+    if args.spotlight:
         path = getLatestWallpaperLocal()
+    if args.random:
+        path = getRandomImageFromDatabase()
+    if args.wikimedia:
+        path = getLatestWikimediaWallpaperRemote()
     setWallpaperWithCtypes(path)
     sys.exit(0)
