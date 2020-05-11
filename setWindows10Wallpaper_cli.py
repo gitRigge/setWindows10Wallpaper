@@ -46,7 +46,7 @@ import win32con
 __author__ = "Roland Rickborn (gitRigge)"
 __copyright__ = "Copyright (C) 2020 Roland Rickborn"
 __license__ = "MIT License (see https://en.wikipedia.org/wiki/MIT_License)"
-__version__ = "0.7"
+__version__ = "0.8"
 __status__ = "Development"
 
 def set_wallpaper_with_ctypes(path):
@@ -85,7 +85,7 @@ def get_latest_wallpaper_local():
                     return full_image_path
                 else:
                     logging.debug('get_latest_wallpaper_local - get_tmage_path_from_database({})'.format(full_image_url))
-                    return get_tmage_path_from_database(full_image_url)
+                    return get_image_path_from_database(full_image_url)
 
 def get_image_size(fname):
     """Checks if the asset given by 'fname' is of type 'png', 'jpeg' or 'gif',
@@ -212,12 +212,82 @@ def add_image_to_database(full_image_url, image_name, image_source):
     # Close connection
     conn.close()
 
-def get_tmage_path_from_database(full_image_url):
-    """Reads database and returns full image path based on full image url
-    given by 'full_image_url'  
+def database_maintenance():
+    """Keep database and image folder synced"""
+
+    logging.debug('database_maintenance()')
+
+    all_imagepaths = get_all_images_from_database()
+    for imagepath in all_imagepaths:
+        if not os.path.isfile(imagepath):
+            delete_image_from_database(imagepath)
+
+def get_all_images_from_database():
+    """Reads database and returns full image path of all
+    images currently stored in the database
     """
 
-    logging.debug('get_tmage_path_from_database({})'.format(full_image_url))
+    logging.debug('get_all_images_from_database()')
+
+    dir_path = os.path.join(os.environ['LOCALAPPDATA'],'WarietyWallpaperImages')
+    os.makedirs(dir_path, exist_ok=True)
+    db_file = os.path.join(dir_path,'wariety.db')
+    full_image_paths = []
+    conn = sqlite3.connect(db_file)
+    c = conn.cursor()
+
+    # Create table
+    c.execute("""
+        CREATE TABLE IF NOT EXISTS wallpapers (
+        id integer primary key,
+        iurl text unique,
+        iname text,
+        ipath text,
+        isource text)
+        """)
+
+    # Select a row
+    c.execute("SELECT ipath FROM wallpapers", ())
+    result = c.fetchall()
+    conn.close()
+    for item in result:
+        full_image_paths.append(os.path.abspath(item[0]))
+    logging.debug('get_all_images_from_database - full_image_paths = {}'.format(full_image_paths))
+    return full_image_paths
+
+def delete_image_from_database(full_image_path):
+    """Deletes image given by 'full_image_path' from database
+    """
+
+    logging.debug('delete_image_from_database({})'.format(full_image_path))
+
+    dir_path = os.path.join(os.environ['LOCALAPPDATA'],'WarietyWallpaperImages')
+    os.makedirs(dir_path, exist_ok=True)
+    db_file = os.path.join(dir_path,'wariety.db')
+    conn = sqlite3.connect(db_file)
+    c = conn.cursor()
+
+    # Create table
+    c.execute("""
+        CREATE TABLE IF NOT EXISTS wallpapers (
+        id integer primary key,
+        iurl text unique,
+        iname text,
+        ipath text,
+        isource text)
+        """)
+
+    # Select a row
+    c.execute("DELETE FROM wallpapers WHERE ipath = ?", (full_image_path,))
+    conn.commit()
+    conn.close()
+
+def get_image_path_from_database(full_image_url):
+    """Reads database and returns full image path based on full image url
+    given by 'full_image_url'
+    """
+
+    logging.debug('get_image_path_from_database({})'.format(full_image_url))
 
     dir_path = os.path.join(os.environ['LOCALAPPDATA'],'WarietyWallpaperImages')
     os.makedirs(dir_path, exist_ok=True)
@@ -240,7 +310,7 @@ def get_tmage_path_from_database(full_image_url):
     c.execute("SELECT ipath FROM wallpapers WHERE iurl = ?", (full_image_url,))
     full_image_path = os.path.abspath(c.fetchone()[0])
     conn.close()
-    logging.debug('get_tmage_path_from_database - full_image_path = {}'.format(full_image_path))
+    logging.debug('get_image_path_from_database - full_image_path = {}'.format(full_image_path))
     return full_image_path
 
 def update_image_in_database(full_image_url, full_image_path):
@@ -411,7 +481,7 @@ def get_latest_wikimedia_wallpaper_remote():
         full_image_path = download_image(full_image_url, image_name)
         update_image_in_database(full_image_url, full_image_path)
     else:
-        full_image_path = get_tmage_path_from_database(full_image_url)
+        full_image_path = get_image_path_from_database(full_image_url)
 
     # Return full path to image
     logging.debug('get_latest_wikimedia_wallpaper_remote - full_image_path = {}'.format(full_image_path))
@@ -445,7 +515,7 @@ def get_latest_flickr_wallpaper_remote():
         full_image_path = download_image(full_image_url, image_name)
         update_image_in_database(full_image_url, full_image_path)
     else:
-        full_image_path = get_tmage_path_from_database(full_image_url)
+        full_image_path = get_image_path_from_database(full_image_url)
 
     # Return full path to image
     logging.debug('get_latest_flickr_wallpaper_remote - full_image_path = {}'.format(full_image_path))
@@ -477,7 +547,7 @@ def get_latest_bing_wallpaper_remote():
         full_image_path = download_image(full_image_url, image_name)
         update_image_in_database(full_image_url, full_image_path)
     else:
-        full_image_path = get_tmage_path_from_database(full_image_url)
+        full_image_path = get_image_path_from_database(full_image_url)
 
     # Return full path to image
     logging.debug('get_latest_bing_wallpaper_remote - full_image_path = {}'.format(full_image_path))
@@ -525,6 +595,8 @@ if __name__ == "__main__":
             if getattr(args, arg):
                 myargs.append('--{}'.format(arg))
         logging.debug('__main__ - Starting application with "{}.py {}"'.format(myname,' '.join(myargs)))
+    # do maintenance in any case; do it only after debug
+    database_maintenance()
     if args.info:
         usage('-i')
         set_any_option = True
