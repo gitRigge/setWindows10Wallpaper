@@ -49,7 +49,7 @@ __license__ = "MIT License (see https://en.wikipedia.org/wiki/MIT_License)"
 __version__ = "0.7"
 __status__ = "Development"
 
-def setWallpaperWithCtypes(path):
+def set_wallpaper_with_ctypes(path):
     """Sets asset given by 'path' as current Desktop wallpaper"""
 
     logging.debug('setWallpaperWithCtypes({})'.format(path))
@@ -57,12 +57,12 @@ def setWallpaperWithCtypes(path):
     cs = ctypes.create_string_buffer(path.encode('utf-8'))
     ok = ctypes.windll.user32.SystemParametersInfoA(win32con.SPI_SETDESKWALLPAPER, 0, cs, 0)
 
-def getLatestWallpaperLocal():
+def get_latest_wallpaper_local():
     """Loops through all locally stored Windows Spotlight assets
     and copies and returns the latest asset which has the same orientation as the screen
     """
 
-    logging.debug('getLatestWallpaperLocal()')
+    logging.debug('get_latest_wallpaper_local()')
 
     list_of_files = sorted(glob.glob(os.environ['LOCALAPPDATA']
         +r'\Packages\Microsoft.Windows.ContentDeliveryManager_cw5n1h2txyewy\LocalState\Assets'
@@ -70,22 +70,22 @@ def getLatestWallpaperLocal():
     for asset in list_of_files:
         extension = imghdr.what(asset)
         if extension in ['jpeg', 'jpg', 'png']:
-            if isImageLandscape(asset) == isScreenLandscape():
+            if is_image_landscape(asset) == is_screen_landscape():
                 # Generate pseudo url
                 full_image_url = os.path.split(asset)[1]
-                if not existsImageInDatabase(full_image_url):
-                    image_name = getGeneratedImageName(asset+'.'+extension)
-                    addImageToDatabase(full_image_url, image_name, "spotlight")
+                if not exists_image_in_database(full_image_url):
+                    image_name = get_generated_image_name(asset+'.'+extension)
+                    add_image_to_database(full_image_url, image_name, "spotlight")
                     dir_path = os.path.join(os.environ['TEMP'],'WarietyWallpaperImages')
                     os.makedirs(dir_path, exist_ok=True)
                     full_image_path = os.path.join(dir_path, image_name)
                     shutil.copyfile(asset, full_image_path)
-                    updateImageInDatabase(full_image_url, full_image_path)
-                    logging.debug('getLatestWallpaperLocal - full_image_path = {}'.format(full_image_path))
+                    update_image_in_database(full_image_url, full_image_path)
+                    logging.debug('get_latest_wallpaper_local - full_image_path = {}'.format(full_image_path))
                     return full_image_path
                 else:
-                    logging.debug('getLatestWallpaperLocal - getImagePathFromDatabase({})'.format(full_image_url))
-                    return getImagePathFromDatabase(full_image_url)
+                    logging.debug('get_latest_wallpaper_local - get_tmage_path_from_database({})'.format(full_image_url))
+                    return get_tmage_path_from_database(full_image_url)
 
 def get_image_size(fname):
     """Checks if the asset given by 'fname' is of type 'png', 'jpeg' or 'gif',
@@ -130,61 +130,61 @@ def get_image_size(fname):
         logging.debug('get_image_size - width, height = {}, {}'.format(width, height))
         return width, height
 
-def isImageLandscape(asset):
+def is_image_landscape(asset):
     """Checks the orientation of the asset given by 'asset' and returns 'True' if the asset's
     orientation is landscape
     """
     
-    logging.debug('isImageLandscape({})'.format(asset))
+    logging.debug('is_image_landscape({})'.format(asset))
 
     myDim = get_image_size(asset)
     # Calculate Width:Height; > 0 == landscape; < 0 == portrait
     if myDim[0]/myDim[1] > 1:
-        logging.debug('isImageLandscape - True')
+        logging.debug('is_image_landscape - True')
         return True
     else:
-        logging.debug('isImageLandscape - False')
+        logging.debug('is_image_landscape - False')
         return False
 
-def isScreenLandscape():
+def is_screen_landscape():
     """Checks the current screen orientation and returns 'True' if the screen orientation
     is landscape
     """
 
-    logging.debug('isScreenLandscape()')
+    logging.debug('is_screen_landscape()')
 
-    if getScreenWidth()/getScreenHeight() > 1:
-        logging.debug('isImageLandscape - True')
+    if get_screen_width()/get_screen_height() > 1:
+        logging.debug('is_image_landscape - True')
         return True
     else:
-        logging.debug('isImageLandscape - False')
+        logging.debug('is_image_landscape - False')
         return False
 
-def getScreenWidth():
+def get_screen_width():
     """Reads Windows System Metrics and returns screen width in pixel"""
 
-    logging.debug('getScreenWidth()')
+    logging.debug('get_screen_width()')
 
     width = win32api.GetSystemMetrics(0)
-    logging.debug('getScreenWidth - width = {}'.format(width))
+    logging.debug('get_screen_width - width = {}'.format(width))
     return width
 
-def getScreenHeight():
+def get_screen_height():
     """Reads Windows System Metrics and returns screen heigth in pixel"""
 
-    logging.debug('getScreenHeight()')
+    logging.debug('get_screen_height()')
 
     height = win32api.GetSystemMetrics(1)
-    logging.debug('getScreenHeight - height = {}'.format(height))
+    logging.debug('get_screen_height - height = {}'.format(height))
     return height
 
-def addImageToDatabase(full_image_url, image_name, image_source):
+def add_image_to_database(full_image_url, image_name, image_source):
     """Creates a database if it does not yet exist and writes full image url
     given by 'full_image_url' as primary key, image name given by 'image_name'
     and image source given by 'image_source' to a database
     """
 
-    logging.debug('addImageToDatabase({}, {}, {})'.format(full_image_url, image_name, image_source))
+    logging.debug('add_image_to_database({}, {}, {})'.format(full_image_url, image_name, image_source))
 
     dir_path = os.path.join(os.environ['LOCALAPPDATA'],'WarietyWallpaperImages')
     os.makedirs(dir_path, exist_ok=True)
@@ -212,12 +212,12 @@ def addImageToDatabase(full_image_url, image_name, image_source):
     # Close connection
     conn.close()
 
-def getImagePathFromDatabase(full_image_url):
+def get_tmage_path_from_database(full_image_url):
     """Reads database and returns full image path based on full image url
     given by 'full_image_url'  
     """
 
-    logging.debug('getImagePathFromDatabase({})'.format(full_image_url))
+    logging.debug('get_tmage_path_from_database({})'.format(full_image_url))
 
     dir_path = os.path.join(os.environ['LOCALAPPDATA'],'WarietyWallpaperImages')
     os.makedirs(dir_path, exist_ok=True)
@@ -240,13 +240,13 @@ def getImagePathFromDatabase(full_image_url):
     c.execute("SELECT ipath FROM wallpapers WHERE iurl = ?", (full_image_url,))
     full_image_path = os.path.abspath(c.fetchone()[0])
     conn.close()
-    logging.debug('getImagePathFromDatabase - full_image_path = {}'.format(full_image_path))
+    logging.debug('get_tmage_path_from_database - full_image_path = {}'.format(full_image_path))
     return full_image_path
 
-def updateImageInDatabase(full_image_url, full_image_path):
+def update_image_in_database(full_image_url, full_image_path):
     """Updates image full path given by 'full_image_path' in database"""
 
-    logging.debug('updateImageInDatabase({}, {})'.format(full_image_url, full_image_path))
+    logging.debug('update_image_in_database({}, {})'.format(full_image_url, full_image_path))
 
     dir_path = os.path.join(os.environ['LOCALAPPDATA'],'WarietyWallpaperImages')
     os.makedirs(dir_path, exist_ok=True)
@@ -263,10 +263,10 @@ def updateImageInDatabase(full_image_url, full_image_path):
     # Close connection
     conn.close()
 
-def existsImageInDatabase(full_image_url):
+def exists_image_in_database(full_image_url):
     """Checks whether an image given by 'full_image_url' exists already in databse"""
 
-    logging.debug('existsImageInDatabase({})'.format(full_image_url))
+    logging.debug('exists_image_in_database({})'.format(full_image_url))
 
     dir_path = os.path.join(os.environ['LOCALAPPDATA'],'WarietyWallpaperImages')
     db_file = os.path.join(dir_path,'wariety.db')
@@ -288,50 +288,50 @@ def existsImageInDatabase(full_image_url):
 
     if c.fetchone() is not None:
         conn.close()
-        logging.debug('existsImageInDatabase - True')
+        logging.debug('exists_image_in_database - True')
         return True
     else:
         conn.close()
-        logging.debug('existsImageInDatabase - False')
+        logging.debug('exists_image_in_database - False')
         return False
 
-def getGeneratedImageName(full_image_url):
+def get_generated_image_name(full_image_url):
     """Expects URL to an image, retrieves its file extension and returns
     an image name based on the current date and with the correct file
     extension
     """
 
-    logging.debug('getGeneratedImageName({})'.format(full_image_url))
+    logging.debug('get_generated_image_name({})'.format(full_image_url))
 
     image_name = datetime.datetime.now().strftime("%Y%m%d%H%M%S")
     image_extension = full_image_url.split(".")[-1]
     image_name = image_name + "." + image_extension
-    logging.debug('getGeneratedImageName - image_name = {}'.format(image_name))
+    logging.debug('get_generated_image_name - image_name = {}'.format(image_name))
     return image_name
 
-def downloadImage(full_image_url, image_name):
+def download_image(full_image_url, image_name):
     """Creates the folder 'WarietyWallpaperImages' in the temporary
     locations if it does not yet exist. Downloads the image given
     by 'full_image_url', stores it there and returns the path to it
     """
 
-    logging.debug('downloadImage({}, {})'.format(full_image_url, image_name))
+    logging.debug('download_image({}, {})'.format(full_image_url, image_name))
 
     img_data = requests.get(full_image_url).content
     dir_path = os.path.join(os.environ['TEMP'],'WarietyWallpaperImages')
     os.makedirs(dir_path, exist_ok=True)
     with open(os.path.join(dir_path, image_name), 'wb') as handler:
         handler.write(img_data)
-    logging.debug('downloadImage - dir_path = {}'.format(dir_path))
-    logging.debug('downloadImage - image_name = {}'.format(image_name))
+    logging.debug('download_image - dir_path = {}'.format(dir_path))
+    logging.debug('download_image - image_name = {}'.format(image_name))
     return os.path.join(dir_path, image_name)
 
-def getRandomImageFromDatabase():
+def get_random_image_from_database():
     """Returns either full image path of a random image from the database or
     from any of the other image sources
     """
 
-    logging.debug('getRandomImageFromDatabase()')
+    logging.debug('get_random_image_from_database()')
 
     dir_path = os.path.join(os.environ['LOCALAPPDATA'],'WarietyWallpaperImages')
     os.makedirs(dir_path, exist_ok=True)
@@ -360,40 +360,40 @@ def getRandomImageFromDatabase():
     try:
         choice = random.randint(0, int(max+max*.5))
         full_image_path = os.path.abspath(result[choice][1])
-        logging.debug('getRandomImageFromDatabase - full_image_path = {}'.format(full_image_path))
+        logging.debug('get_random_image_from_database - full_image_path = {}'.format(full_image_path))
         return full_image_path
     except:
-        full_image_path = getRandomImageFromAnySource()
-        logging.debug('getRandomImageFromDatabase - full_image_path = {}'.format(full_image_path))
+        full_image_path = get_random_image_from_any_source()
+        logging.debug('get_random_image_from_database - full_image_path = {}'.format(full_image_path))
         return full_image_path
 
-def getRandomImageFromAnySource():
+def get_random_image_from_any_source():
     """Returns full image path of any image source
     """
 
-    logging.debug('getRandomImageFromAnySource()')
+    logging.debug('get_random_image_from_any_source()')
 
     myChoice = random.choice(['bing', 'flickr', 'spotlight', 'wikimedia'])
     if myChoice == 'bing':
-        logging.debug('getRandomImageFromAnySource - getLatestBingWallpaperRemote()')
-        return getLatestBingWallpaperRemote()
+        logging.debug('get_random_image_from_any_source - get_latest_bing_wallpaper_remote()')
+        return get_latest_bing_wallpaper_remote()
     elif myChoice == 'flickr':
-        logging.debug('getRandomImageFromAnySource - getLatestFlickrWallpaperRemote()')
-        return getLatestFlickrWallpaperRemote()
+        logging.debug('get_random_image_from_any_source - get_latest_flickr_wallpaper_remote()')
+        return get_latest_flickr_wallpaper_remote()
     elif myChoice == 'spotlight':
-        logging.debug('getRandomImageFromAnySource - getLatestWallpaperLocal()')
-        return getLatestWallpaperLocal()
+        logging.debug('get_random_image_from_any_source - getLatestWallpaperLocal()')
+        return get_latest_wallpaper_local()
     elif myChoice == 'wikimedia':
-        logging.debug('getRandomImageFromAnySource - getLatestWikimediaWallpaperRemote()')
-        return getLatestWikimediaWallpaperRemote()
+        logging.debug('get_random_image_from_any_source - get_latest_wikimedia_wallpaper_remote()')
+        return get_latest_wikimedia_wallpaper_remote()
 
-def getLatestWikimediaWallpaperRemote():
+def get_latest_wikimedia_wallpaper_remote():
     """Retrieves the URL of the latest image of Wikimedia Picture Of The Day,
     downloads the image, stores it in a temporary folder and returns the path
     to it
     """
 
-    logging.debug('getLatestWikimediaWallpaperRemote()')
+    logging.debug('get_latest_wikimedia_wallpaper_remote()')
 
     # get image url
     response = requests.get("https://commons.wikimedia.org/wiki/Hauptseite")
@@ -402,28 +402,28 @@ def getLatestWikimediaWallpaperRemote():
     full_image_url = image_url.replace('500px','1920px')
 
     # image's name
-    image_name = getGeneratedImageName(full_image_url)
+    image_name = get_generated_image_name(full_image_url)
 
     # Check and maintain DB
-    if not existsImageInDatabase(full_image_url):
-        addImageToDatabase(full_image_url, image_name, "wikimedia")
+    if not exists_image_in_database(full_image_url):
+        add_image_to_database(full_image_url, image_name, "wikimedia")
         # download and save image
-        full_image_path = downloadImage(full_image_url, image_name)
-        updateImageInDatabase(full_image_url, full_image_path)
+        full_image_path = download_image(full_image_url, image_name)
+        update_image_in_database(full_image_url, full_image_path)
     else:
-        full_image_path = getImagePathFromDatabase(full_image_url)
+        full_image_path = get_tmage_path_from_database(full_image_url)
 
     # Return full path to image
-    logging.debug('getLatestWikimediaWallpaperRemote - full_image_path = {}'.format(full_image_path))
+    logging.debug('get_latest_wikimedia_wallpaper_remote - full_image_path = {}'.format(full_image_path))
     return full_image_path
 
-def getLatestFlickrWallpaperRemote():
+def get_latest_flickr_wallpaper_remote():
     """Retrieves the URL of the latest image of Peter Levi's Flickr Collection,
     downloads the image, stores it in a temporary folder and returns the path
     to it
     """
 
-    logging.debug('getLatestFlickrWallpaperRemote()')
+    logging.debug('get_latest_flickr_wallpaper_remote()')
 
     # get image url
     response = requests.get("https://www.flickr.com/photos/peter-levi/")
@@ -436,27 +436,27 @@ def getLatestFlickrWallpaperRemote():
     full_image_url = match.group(0)
 
     # image's name
-    image_name = getGeneratedImageName(full_image_url)
+    image_name = get_generated_image_name(full_image_url)
 
     # Check and maintain DB
-    if not existsImageInDatabase(full_image_url):
-        addImageToDatabase(full_image_url, image_name, "flickr")
+    if not exists_image_in_database(full_image_url):
+        add_image_to_database(full_image_url, image_name, "flickr")
         # download and save image
-        full_image_path = downloadImage(full_image_url, image_name)
-        updateImageInDatabase(full_image_url, full_image_path)
+        full_image_path = download_image(full_image_url, image_name)
+        update_image_in_database(full_image_url, full_image_path)
     else:
-        full_image_path = getImagePathFromDatabase(full_image_url)
+        full_image_path = get_tmage_path_from_database(full_image_url)
 
     # Return full path to image
-    logging.debug('getLatestFlickrWallpaperRemote - full_image_path = {}'.format(full_image_path))
+    logging.debug('get_latest_flickr_wallpaper_remote - full_image_path = {}'.format(full_image_path))
     return full_image_path
 
-def getLatestBingWallpaperRemote():
+def get_latest_bing_wallpaper_remote():
     """Retrieves the URL of Bing's Image Of The Day image, downloads the image,
     stores it in a temporary folder and returns the path to it
     """
 
-    logging.debug('getLatestBingWallpaperRemote()')
+    logging.debug('get_latest_bing_wallpaper_remote()')
 
     # get image url
     response = requests.get("https://www.bing.com/HPImageArchive.aspx?format=js&idx=0&n=1&mkt=en-US")
@@ -465,22 +465,22 @@ def getLatestBingWallpaperRemote():
     image_url = image_data["images"][0]["url"]
     image_url = image_url.split("&")[0]
     full_image_url = "https://www.bing.com" + image_url
-    logging.debug('getLatestBingWallpaperRemote - full_image_url = {}'.format(full_image_url))
+    logging.debug('get_latest_bing_wallpaper_remote - full_image_url = {}'.format(full_image_url))
 
     # image's name
-    image_name = getGeneratedImageName(full_image_url)
+    image_name = get_generated_image_name(full_image_url)
 
     # Check and maintain DB
-    if not existsImageInDatabase(full_image_url):
-        addImageToDatabase(full_image_url, image_name, "bing")
+    if not exists_image_in_database(full_image_url):
+        add_image_to_database(full_image_url, image_name, "bing")
         # download and save image
-        full_image_path = downloadImage(full_image_url, image_name)
-        updateImageInDatabase(full_image_url, full_image_path)
+        full_image_path = download_image(full_image_url, image_name)
+        update_image_in_database(full_image_url, full_image_path)
     else:
-        full_image_path = getImagePathFromDatabase(full_image_url)
+        full_image_path = get_tmage_path_from_database(full_image_url)
 
     # Return full path to image
-    logging.debug('getLatestBingWallpaperRemote - full_image_path = {}'.format(full_image_path))
+    logging.debug('get_latest_bing_wallpaper_remote - full_image_path = {}'.format(full_image_path))
     return full_image_path
 
 def usage(arg):
@@ -532,23 +532,23 @@ if __name__ == "__main__":
         usage('-v')
         set_any_option = True
     if args.bing:
-        path = getLatestBingWallpaperRemote()
+        path = get_latest_bing_wallpaper_remote()
         set_any_option = True
     if args.flickr:
-        path = getLatestFlickrWallpaperRemote()
+        path = get_latest_flickr_wallpaper_remote()
         set_any_option = True
     if args.spotlight:
-        path = getLatestWallpaperLocal()
+        path = get_latest_wallpaper_local()
         set_any_option = True
     if args.random:
-        path = getRandomImageFromDatabase()
+        path = get_random_image_from_database()
         set_any_option = True
     if args.wikimedia:
-        path = getLatestWikimediaWallpaperRemote()
+        path = get_latest_wikimedia_wallpaper_remote()
         set_any_option = True
     if not set_any_option:
         # default
-        path = getLatestWallpaperLocal()
-    setWallpaperWithCtypes(path)
+        path = get_latest_wallpaper_local()
+    set_wallpaper_with_ctypes(path)
     logging.debug('__main__ - Stopping application with exit code "0"\n')
     sys.exit(0)
