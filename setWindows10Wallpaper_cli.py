@@ -393,7 +393,7 @@ def download_image(full_image_url, image_name):
     logging.debug('download_image({}, {})'.format(full_image_url, image_name))
 
     if use_proxy:
-        img_data = requests.get(full_image_url, proxies=proxies, timeout=5)
+        img_data = requests.get(full_image_url, proxies=proxies, timeout=5, verify=False)
     else:
         img_data = requests.get(full_image_url).content
     dir_path = os.path.join(os.environ['TEMP'],'WarietyWallpaperImages')
@@ -475,7 +475,7 @@ def get_latest_wikimedia_wallpaper_remote():
 
     # get image url
     if use_proxy:
-        response = requests.get("https://commons.wikimedia.org/wiki/Hauptseite", proxies=proxies, timeout=15)
+        response = requests.get("https://commons.wikimedia.org/wiki/Hauptseite", proxies=proxies, timeout=15, verify=False)
     else:
         response = requests.get("https://commons.wikimedia.org/wiki/Hauptseite")
     match = re.search('.*mainpage-potd.*src=\"([^\"]*)\".*', response.text)
@@ -508,14 +508,14 @@ def get_latest_flickr_wallpaper_remote():
 
     # get image url
     if use_proxy:
-        response = requests.get("https://www.flickr.com/photos/peter-levi/", proxies=proxies, timeout=5)
+        response = requests.get("https://www.flickr.com/photos/peter-levi/", proxies=proxies, timeout=5, verify=False)
     else:
         response = requests.get("https://www.flickr.com/photos/peter-levi/")
     match = re.search('([0-9]{10})_.*\.jpg\)', response.text)
     image_id = match.group(1)
     image_url = "https://www.flickr.com/photos/peter-levi/"+image_id+"/sizes/h/"
     if use_proxy:
-        response = requests.get(image_url, proxies=proxies, timeout=5)
+        response = requests.get(image_url, proxies=proxies, timeout=5, verify=False)
     else:
         response = requests.get(image_url)
     pattern = 'http.*'+image_id+'.*_h\.jpg'
@@ -547,7 +547,7 @@ def get_latest_bing_wallpaper_remote():
 
     # get image url
     if use_proxy:
-        response = requests.get("https://www.bing.com/HPImageArchive.aspx?format=js&idx=0&n=1&mkt=en-US", proxies=proxies, timeout=5)
+        response = requests.get("https://www.bing.com/HPImageArchive.aspx?format=js&idx=0&n=1&mkt=en-US", proxies=proxies, timeout=5, verify=False)
     else:
         response = requests.get("https://www.bing.com/HPImageArchive.aspx?format=js&idx=0&n=1&mkt=en-US")
     image_data = json.loads(response.text)
