@@ -11,7 +11,7 @@ Default: Microsoft Spotlight
 
 ## USAGE
 
-    usage: setWindows10Wallpaper_cli.py [-h] [-b] [-f] [-s] [-r] [-w] [-i] [-v]
+    usage: setWindows10Wallpaper_cli.py [-h] [-b] [-f] [-s] [-w] [-r] [-p] [-i] [-v] [-d]
 
     Sets Windows 10 wallpaper to Microsoft Spotlight or Bing Image Of The Day.
 
@@ -22,6 +22,7 @@ Default: Microsoft Spotlight
       -s, --spotlight  set Microsoft Spotlight as wallpaper [default]
       -w, --wikimedia  set Wikimedia Picture Of The Day as wallpaper
       -r, --random     set wallpaper from random source
+      -p, --proxy      use proxy to grab images
       -i, --info       show license and author information
       -v, --version    show version
       -d, --debug      write debug output to logfile

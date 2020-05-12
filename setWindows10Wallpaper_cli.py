@@ -46,8 +46,13 @@ import win32con
 __author__ = "Roland Rickborn (gitRigge)"
 __copyright__ = "Copyright (C) 2020 Roland Rickborn"
 __license__ = "MIT License (see https://en.wikipedia.org/wiki/MIT_License)"
-__version__ = "0.8"
+__version__ = "0.9"
 __status__ = "Development"
+
+proxies = {
+  'http': 'http://0.0.0.0:80/',
+  "https": "http://0.0.0.0:8080",
+}
 
 def set_wallpaper_with_ctypes(path):
     """Sets asset given by 'path' as current Desktop wallpaper"""
@@ -387,7 +392,10 @@ def download_image(full_image_url, image_name):
 
     logging.debug('download_image({}, {})'.format(full_image_url, image_name))
 
-    img_data = requests.get(full_image_url).content
+    if use_proxy:
+        img_data = requests.get(full_image_url, proxies=proxies, timeout=5)
+    else:
+        img_data = requests.get(full_image_url).content
     dir_path = os.path.join(os.environ['TEMP'],'WarietyWallpaperImages')
     os.makedirs(dir_path, exist_ok=True)
     with open(os.path.join(dir_path, image_name), 'wb') as handler:
@@ -466,7 +474,10 @@ def get_latest_wikimedia_wallpaper_remote():
     logging.debug('get_latest_wikimedia_wallpaper_remote()')
 
     # get image url
-    response = requests.get("https://commons.wikimedia.org/wiki/Hauptseite")
+    if use_proxy:
+        response = requests.get("https://commons.wikimedia.org/wiki/Hauptseite", proxies=proxies, timeout=15)
+    else:
+        response = requests.get("https://commons.wikimedia.org/wiki/Hauptseite")
     match = re.search('.*mainpage-potd.*src=\"([^\"]*)\".*', response.text)
     image_url = match.group(1)
     full_image_url = image_url.replace('500px','1920px')
@@ -496,11 +507,17 @@ def get_latest_flickr_wallpaper_remote():
     logging.debug('get_latest_flickr_wallpaper_remote()')
 
     # get image url
-    response = requests.get("https://www.flickr.com/photos/peter-levi/")
+    if use_proxy:
+        response = requests.get("https://www.flickr.com/photos/peter-levi/", proxies=proxies, timeout=5)
+    else:
+        response = requests.get("https://www.flickr.com/photos/peter-levi/")
     match = re.search('([0-9]{10})_.*\.jpg\)', response.text)
     image_id = match.group(1)
     image_url = "https://www.flickr.com/photos/peter-levi/"+image_id+"/sizes/h/"
-    response = requests.get(image_url)
+    if use_proxy:
+        response = requests.get(image_url, proxies=proxies, timeout=5)
+    else:
+        response = requests.get(image_url)
     pattern = 'http.*'+image_id+'.*_h\.jpg'
     match = re.search(pattern, response.text)
     full_image_url = match.group(0)
@@ -529,7 +546,10 @@ def get_latest_bing_wallpaper_remote():
     logging.debug('get_latest_bing_wallpaper_remote()')
 
     # get image url
-    response = requests.get("https://www.bing.com/HPImageArchive.aspx?format=js&idx=0&n=1&mkt=en-US")
+    if use_proxy:
+        response = requests.get("https://www.bing.com/HPImageArchive.aspx?format=js&idx=0&n=1&mkt=en-US", proxies=proxies, timeout=5)
+    else:
+        response = requests.get("https://www.bing.com/HPImageArchive.aspx?format=js&idx=0&n=1&mkt=en-US")
     image_data = json.loads(response.text)
 
     image_url = image_data["images"][0]["url"]
@@ -578,11 +598,13 @@ if __name__ == "__main__":
     parser.add_argument('-s', '--spotlight', help = "set Microsoft Spotlight as wallpaper [default]", action="store_true")
     parser.add_argument('-w', '--wikimedia', help = "set Wikimedia Picture Of The Day as wallpaper", action="store_true")
     parser.add_argument('-r', '--random', help = "set wallpaper from random source", action="store_true")
+    parser.add_argument('-p','--proxy', help = "use proxy to grab images", action="store_true")
     parser.add_argument('-i','--info', help = "show license and author information", action="store_true")
     parser.add_argument('-v', '--version', help = "show version", action="store_true")
     parser.add_argument('-d','--debug', help = "write debug output to logfile", action="store_true")
     path = ""
     args = parser.parse_args()
+    use_proxy = False
     set_any_option = False
     if args.debug:
         myname = os.path.basename(__file__).split('.')[0]
@@ -595,6 +617,8 @@ if __name__ == "__main__":
             if getattr(args, arg):
                 myargs.append('--{}'.format(arg))
         logging.debug('__main__ - Starting application with "{}.py {}"'.format(myname,' '.join(myargs)))
+    if args.proxy:
+        use_proxy = True
     # do maintenance in any case; do it only after debug
     database_maintenance()
     if args.info:
