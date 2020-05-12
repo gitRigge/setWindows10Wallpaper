@@ -46,7 +46,7 @@ import win32con
 __author__ = "Roland Rickborn (gitRigge)"
 __copyright__ = "Copyright (C) 2020 Roland Rickborn"
 __license__ = "MIT License (see https://en.wikipedia.org/wiki/MIT_License)"
-__version__ = "0.9"
+__version__ = "1.0"
 __status__ = "Development"
 
 proxies = {
@@ -451,10 +451,13 @@ def get_random_image_from_any_source():
 
     logging.debug('get_random_image_from_any_source()')
 
-    myChoice = random.choice(['bing', 'flickr', 'spotlight', 'wikimedia'])
+    myChoice = random.choice(['bing', 'bingarchive', 'flickr', 'spotlight', 'wikimedia'])
     if myChoice == 'bing':
         logging.debug('get_random_image_from_any_source - get_latest_bing_wallpaper_remote()')
         return get_latest_bing_wallpaper_remote()
+    elif myChoice == 'bingarchive':
+        logging.debug('get_random_image_from_any_source - get_a_bing_archive_wallpaper_remote()')
+        return get_a_bing_archive_wallpaper_remote()
     elif myChoice == 'flickr':
         logging.debug('get_random_image_from_any_source - get_latest_flickr_wallpaper_remote()')
         return get_latest_flickr_wallpaper_remote()
@@ -464,6 +467,41 @@ def get_random_image_from_any_source():
     elif myChoice == 'wikimedia':
         logging.debug('get_random_image_from_any_source - get_latest_wikimedia_wallpaper_remote()')
         return get_latest_wikimedia_wallpaper_remote()
+
+def get_a_bing_archive_wallpaper_remote():
+    """Retrieves the URL of one image of Bing Wallpaper Archive,
+    downloads the image, stores it in a temporary folder and returns the path
+    to it
+    """
+    
+    logging.debug('get_a_bing_archive_wallpaper_remote()')
+
+    now = datetime.datetime.now()
+    url = "https://bingwallpaper.anerg.com/de/{}".format(now.strftime('%Y%m'))
+
+    # get image url
+    if use_proxy:
+        
+        response = requests.get(url, proxies=proxies, timeout=15, verify=False)
+    else:
+        response = requests.get(url)
+    match = re.findall('.*src=\"([^\"]*\.jpg)\".*', response.text)
+    for i in range(0, len(match)):
+        full_image_url = "https:{}".format(match[i])
+        
+        # image's name
+        image_name = get_generated_image_name(full_image_url)
+        
+        # Check and maintain DB
+        if not exists_image_in_database(full_image_url):
+            add_image_to_database(full_image_url, image_name, "wikimedia")
+            # download and save image
+            full_image_path = download_image(full_image_url, image_name)
+            update_image_in_database(full_image_url, full_image_path)
+
+            # Return full path to image
+            logging.debug('get_a_bing_archive_wallpaper_remote - full_image_path = {}'.format(full_image_path))
+            return full_image_path
 
 def get_latest_wikimedia_wallpaper_remote():
     """Retrieves the URL of the latest image of Wikimedia Picture Of The Day,
@@ -594,6 +632,7 @@ def usage(arg):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Load and show nice Windows background images.')
     parser.add_argument('-b', '--bing', help = "set Bing Image Of The Day as wallpaper", action="store_true")
+    parser.add_argument('-a', '--bingarchive', help = "set Bing Wallpaper Archive as wallpaper", action="store_true")
     parser.add_argument('-f', '--flickr', help = "set Peter Levi's Flickr Collection as wallpaper", action="store_true")
     parser.add_argument('-s', '--spotlight', help = "set Microsoft Spotlight as wallpaper [default]", action="store_true")
     parser.add_argument('-w', '--wikimedia', help = "set Wikimedia Picture Of The Day as wallpaper", action="store_true")
@@ -629,6 +668,9 @@ if __name__ == "__main__":
         set_any_option = True
     if args.bing:
         path = get_latest_bing_wallpaper_remote()
+        set_any_option = True
+    if args.bingarchive:
+        path = get_a_bing_archive_wallpaper_remote()
         set_any_option = True
     if args.flickr:
         path = get_latest_flickr_wallpaper_remote()
