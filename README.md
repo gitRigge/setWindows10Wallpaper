@@ -22,7 +22,7 @@ Default: Microsoft Spotlight
       -s, --spotlight  set Microsoft Spotlight as wallpaper [default]
       -w, --wikimedia  set Wikimedia Picture Of The Day as wallpaper
       -r, --random     set wallpaper from random source
-      -p, --proxy      use proxy to grab images
+      -p, --proxy      use proxy to grab images (SSL cert check disabled)
       -i, --info       show license and author information
       -v, --version    show version
       -d, --debug      write debug output to logfile
