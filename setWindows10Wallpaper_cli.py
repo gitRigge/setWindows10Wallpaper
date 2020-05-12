@@ -494,7 +494,7 @@ def get_a_bing_archive_wallpaper_remote():
         
         # Check and maintain DB
         if not exists_image_in_database(full_image_url):
-            add_image_to_database(full_image_url, image_name, "wikimedia")
+            add_image_to_database(full_image_url, image_name, "bingarchive")
             # download and save image
             full_image_path = download_image(full_image_url, image_name)
             update_image_in_database(full_image_url, full_image_path)
