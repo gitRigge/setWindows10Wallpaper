@@ -46,8 +46,8 @@ import win32con
 __author__ = "Roland Rickborn (gitRigge)"
 __copyright__ = "Copyright (C) 2020 Roland Rickborn"
 __license__ = "MIT License (see https://en.wikipedia.org/wiki/MIT_License)"
-__version__ = "1.0"
-__status__ = "Development"
+__version__ = "1.1"
+__status__ = "Release Candidate"
 
 proxies = {
   'http': 'http://0.0.0.0:80/',
@@ -451,16 +451,19 @@ def get_random_image_from_any_source():
 
     logging.debug('get_random_image_from_any_source()')
 
-    myChoice = random.choice(['bing', 'bingarchive', 'flickr', 'spotlight', 'wikimedia'])
-    if myChoice == 'bing':
-        logging.debug('get_random_image_from_any_source - get_latest_bing_wallpaper_remote()')
-        return get_latest_bing_wallpaper_remote()
-    elif myChoice == 'bingarchive':
+    myChoice = random.choice(['bingarchive', 'bing', 'national', 'flickr', 'spotlight', 'wikimedia'])
+    if myChoice == 'bingarchive':
         logging.debug('get_random_image_from_any_source - get_a_bing_archive_wallpaper_remote()')
         return get_a_bing_archive_wallpaper_remote()
+    elif myChoice == 'bing':
+        logging.debug('get_random_image_from_any_source - get_latest_bing_wallpaper_remote()')
+        return get_latest_bing_wallpaper_remote()
     elif myChoice == 'flickr':
         logging.debug('get_random_image_from_any_source - get_latest_flickr_wallpaper_remote()')
         return get_latest_flickr_wallpaper_remote()
+    elif myChoice == 'national':
+        logging.debug('get_random_image_from_any_source - get_latest_national_geographic_wallpaper_remote()')
+        return get_latest_national_geographic_wallpaper_remote()
     elif myChoice == 'spotlight':
         logging.debug('get_random_image_from_any_source - getLatestWallpaperLocal()')
         return get_latest_wallpaper_local()
@@ -582,6 +585,38 @@ def get_latest_flickr_wallpaper_remote():
     logging.debug('get_latest_flickr_wallpaper_remote - full_image_path = {}'.format(full_image_path))
     return full_image_path
 
+def get_latest_national_geographic_wallpaper_remote():
+    """Retrieves the URL of National Geographics's Photo Of The Day, downloads the image,
+    stores it in a temporary folder and returns the path to it
+    """
+
+    logging.debug('get_latest_national_geographic_wallpaper_remote()')
+
+    # get image url
+    if use_proxy:
+        response = requests.get("https://www.nationalgeographic.com/photography/photo-of-the-day/", proxies=proxies, timeout=5, verify=False)
+    else:
+        response = requests.get("https://www.nationalgeographic.com/photography/photo-of-the-day/")
+    match = re.search('.*content=\"([^\"]*\.jpg)\".*', response.text)
+    full_image_url = match.group(1)
+    logging.debug('get_latest_national_geographic_wallpaper_remote - full_image_url = {}'.format(full_image_url))
+
+    # image's name
+    image_name = get_generated_image_name(full_image_url)
+
+    # Check and maintain DB
+    if not exists_image_in_database(full_image_url):
+        add_image_to_database(full_image_url, image_name, "national")
+        # download and save image
+        full_image_path = download_image(full_image_url, image_name)
+        update_image_in_database(full_image_url, full_image_path)
+    else:
+        full_image_path = get_image_path_from_database(full_image_url)
+
+    # Return full path to image
+    logging.debug('get_latest_national_geographic_wallpaper_remote - full_image_path = {}'.format(full_image_path))
+    return full_image_path
+
 def get_latest_bing_wallpaper_remote():
     """Retrieves the URL of Bing's Image Of The Day image, downloads the image,
     stores it in a temporary folder and returns the path to it
@@ -637,9 +672,10 @@ def usage(arg):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Load and show nice Windows background images.')
-    parser.add_argument('-b', '--bing', help = "set Bing Image Of The Day as wallpaper", action="store_true")
     parser.add_argument('-a', '--bingarchive', help = "set Bing Wallpaper Archive as wallpaper", action="store_true")
+    parser.add_argument('-b', '--bing', help = "set Bing Image Of The Day as wallpaper", action="store_true")
     parser.add_argument('-f', '--flickr', help = "set Peter Levi's Flickr Collection as wallpaper", action="store_true")
+    parser.add_argument('-n', '--national', help = "set National Geographic's Photo Of The Day as wallpaper", action="store_true")
     parser.add_argument('-s', '--spotlight', help = "set Microsoft Spotlight as wallpaper [default]", action="store_true")
     parser.add_argument('-w', '--wikimedia', help = "set Wikimedia Picture Of The Day as wallpaper", action="store_true")
     parser.add_argument('-r', '--random', help = "set wallpaper from random source", action="store_true")
@@ -672,14 +708,17 @@ if __name__ == "__main__":
     if args.version:
         usage('-v')
         set_any_option = True
-    if args.bing:
-        path = get_latest_bing_wallpaper_remote()
-        set_any_option = True
     if args.bingarchive:
         path = get_a_bing_archive_wallpaper_remote()
         set_any_option = True
+    if args.bing:
+        path = get_latest_bing_wallpaper_remote()
+        set_any_option = True
     if args.flickr:
         path = get_latest_flickr_wallpaper_remote()
+        set_any_option = True
+    if args.national:
+        path = get_latest_national_geographic_wallpaper_remote()
         set_any_option = True
     if args.spotlight:
         path = get_latest_wallpaper_local()
