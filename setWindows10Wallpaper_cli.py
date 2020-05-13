@@ -493,11 +493,17 @@ def get_a_bing_archive_wallpaper_remote():
         image_name = get_generated_image_name(full_image_url)
         
         # Check and maintain DB
-        if not exists_image_in_database(full_image_url):
+        if not exists_image_in_database(full_image_url) and i+1 < len(match):
             add_image_to_database(full_image_url, image_name, "bingarchive")
             # download and save image
             full_image_path = download_image(full_image_url, image_name)
             update_image_in_database(full_image_url, full_image_path)
+
+            # Return full path to image
+            logging.debug('get_a_bing_archive_wallpaper_remote - full_image_path = {}'.format(full_image_path))
+            return full_image_path
+        elif i+1 == len(match):
+            full_image_path = get_image_path_from_database(full_image_url)
 
             # Return full path to image
             logging.debug('get_a_bing_archive_wallpaper_remote - full_image_path = {}'.format(full_image_path))
