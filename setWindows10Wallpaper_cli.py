@@ -54,10 +54,18 @@ proxies = {
   "https": "http://0.0.0.0:8080",
 }
 
+def set_proxy_with_environment_variable():
+    """Sets HTTP and HTTPS proxies according to environment varialbes, if available"""
+
+    logging.debug('set_proxy_with_environment_variable()')
+
+    proxies['http'] = os.getenv('HTTP_PROXY','http://0.0.0.0:80/')
+    proxies['https'] = os.getenv('HTTPS_PROXY','http://0.0.0.0:80/')
+
 def set_wallpaper_with_ctypes(path):
     """Sets asset given by 'path' as current Desktop wallpaper"""
 
-    logging.debug('setWallpaperWithCtypes({})'.format(path))
+    logging.debug('set_wallpaper_with_ctypes({})'.format(path))
 
     cs = ctypes.create_string_buffer(path.encode('utf-8'))
     ok = ctypes.windll.user32.SystemParametersInfoA(win32con.SPI_SETDESKWALLPAPER, 0, cs, 0)
@@ -746,6 +754,7 @@ if __name__ == "__main__":
                 myargs.append('--{}'.format(arg))
         logging.debug('__main__ - Starting application with "{}.py {}"'.format(myname,' '.join(myargs)))
     if args.proxy:
+        set_proxy_with_environment_variable()
         use_proxy = True
     # do maintenance in any case; do it only after debug
     database_maintenance()
