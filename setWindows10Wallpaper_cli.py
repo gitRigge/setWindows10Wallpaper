@@ -408,8 +408,10 @@ def download_image(full_image_url, image_name):
     os.makedirs(dir_path, exist_ok=True)
     with open(os.path.join(dir_path, image_name), 'wb') as handler:
         handler.write(img_data)
+    image_filesize = os.stat(os.path.join(dir_path, image_name)).st_size
     logging.debug('download_image - dir_path = {}'.format(dir_path))
     logging.debug('download_image - image_name = {}'.format(image_name))
+    logging.debug('download_image - image_filesize = {}'.format(image_filesize))
     return os.path.join(dir_path, image_name)
 
 def get_random_image_from_database():
