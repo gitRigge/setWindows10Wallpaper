@@ -192,10 +192,9 @@ def get_screen_height():
     return height
 
 def add_image_to_database(full_image_url, image_name, image_source):
-    """Creates a database if it does not yet exist and writes full image url
-    given by 'full_image_url' as primary key, image name given by 'image_name'
-    and image source given by 'image_source' to a database
-    """
+    """Writes full image url given by 'full_image_url' as primary key,
+    image name given by 'image_name' and image source given by 'image_source'
+    to a database"""
 
     logging.debug('add_image_to_database({}, {}, {})'.format(full_image_url, image_name, image_source))
 
@@ -204,16 +203,6 @@ def add_image_to_database(full_image_url, image_name, image_source):
     db_file = os.path.join(dir_path,'wariety.db')
     conn = sqlite3.connect(db_file)
     c = conn.cursor()
-
-    # Create table
-    c.execute("""
-        CREATE TABLE IF NOT EXISTS wallpapers (
-        id integer primary key,
-        iurl text unique,
-        iname text,
-        ipath text,
-        isource text)
-        """)
 
     # Insert a row of data
     c.execute("""INSERT INTO wallpapers (iurl, iname, isource)
@@ -249,16 +238,6 @@ def get_all_images_from_database():
     conn = sqlite3.connect(db_file)
     c = conn.cursor()
 
-    # Create table
-    c.execute("""
-        CREATE TABLE IF NOT EXISTS wallpapers (
-        id integer primary key,
-        iurl text unique,
-        iname text,
-        ipath text,
-        isource text)
-        """)
-
     # Select a row
     c.execute("SELECT ipath FROM wallpapers", ())
     result = c.fetchall()
@@ -280,16 +259,6 @@ def delete_image_from_database(full_image_path):
     conn = sqlite3.connect(db_file)
     c = conn.cursor()
 
-    # Create table
-    c.execute("""
-        CREATE TABLE IF NOT EXISTS wallpapers (
-        id integer primary key,
-        iurl text unique,
-        iname text,
-        ipath text,
-        isource text)
-        """)
-
     # Select a row
     c.execute("DELETE FROM wallpapers WHERE ipath = ?", (full_image_path,))
     conn.commit()
@@ -308,16 +277,6 @@ def get_image_path_from_database(full_image_url):
     full_image_path = ""
     conn = sqlite3.connect(db_file)
     c = conn.cursor()
-
-    # Create table
-    c.execute("""
-        CREATE TABLE IF NOT EXISTS wallpapers (
-        id integer primary key,
-        iurl text unique,
-        iname text,
-        ipath text,
-        isource text)
-        """)
 
     # Select a row
     c.execute("SELECT ipath FROM wallpapers WHERE iurl = ?", (full_image_url,))
@@ -355,16 +314,6 @@ def exists_image_in_database(full_image_url):
     db_file = os.path.join(dir_path,'wariety.db')
     conn = sqlite3.connect(db_file)
     c = conn.cursor()
-
-    # Create table
-    c.execute("""
-        CREATE TABLE IF NOT EXISTS wallpapers (
-        id integer primary key,
-        iurl text unique,
-        iname text,
-        ipath text,
-        isource text)
-        """)
 
     # Select a row
     c.execute("SELECT id FROM wallpapers WHERE iurl = ?", (full_image_url,))
@@ -414,10 +363,31 @@ def download_image(full_image_url, image_name):
     logging.debug('download_image - image_filesize = {}'.format(image_filesize))
     return os.path.join(dir_path, image_name)
 
+def initialization():
+    """Ensure all tables exist in the database and all keys are available"""
+
+    logging.debug('initialization()')
+
+    dir_path = os.path.join(os.environ['LOCALAPPDATA'],'WarietyWallpaperImages')
+    os.makedirs(dir_path, exist_ok=True)
+    db_file = os.path.join(dir_path,'wariety.db')
+    conn = sqlite3.connect(db_file)
+    c = conn.cursor()
+
+    # Create tables
+    c.execute("""
+        CREATE TABLE IF NOT EXISTS wallpapers (
+        id integer primary key,
+        iurl text unique,
+        iname text,
+        ipath text,
+        isource text)
+        """)
+
+    conn.close()
+
 def get_random_image_from_database():
-    """Returns either full image path of a random image from the database or
-    from any of the other image sources
-    """
+    """Returns either full image path of a random image from the database"""
 
     logging.debug('get_random_image_from_database()')
 
@@ -428,16 +398,6 @@ def get_random_image_from_database():
     full_image_path = ""
     conn = sqlite3.connect(db_file)
     c = conn.cursor()
-
-    # Create table
-    c.execute("""
-        CREATE TABLE IF NOT EXISTS wallpapers (
-        id integer primary key,
-        iurl text unique,
-        iname text,
-        ipath text,
-        isource text)
-        """)
 
     c.execute("SELECT id, ipath FROM wallpapers")
 
@@ -456,8 +416,7 @@ def get_random_image_from_database():
         return full_image_path
 
 def get_random_image_from_any_source():
-    """Returns full image path of any image source
-    """
+    """Returns either full image path of a random image from the database"""
 
     logging.debug('get_random_image_from_any_source()')
 
@@ -758,6 +717,8 @@ if __name__ == "__main__":
     if args.proxy:
         set_proxy_with_environment_variable()
         use_proxy = True
+    # Initialize database
+    initialization()
     # do maintenance in any case; do it only after debug
     database_maintenance()
     if args.info:
