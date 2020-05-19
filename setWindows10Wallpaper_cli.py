@@ -386,14 +386,26 @@ def initialization():
 
     conn.close()
 
+def get_random_image():
+    """Returns either full image path of a random image from the database or
+    from any of the other image sources
+    """
+
+    logging.debug('get_random_image()')
+
+    choice = random.randint(1, 10)
+    if choice < 7:
+        return get_random_image_from_any_source()
+    else:
+        return get_random_image_from_database()
+    
 def get_random_image_from_database():
-    """Returns either full image path of a random image from the database"""
+    """Returns full image path of a random image from the database, if available"""
 
     logging.debug('get_random_image_from_database()')
 
     dir_path = os.path.join(os.environ['LOCALAPPDATA'],'WarietyWallpaperImages')
     os.makedirs(dir_path, exist_ok=True)
-    full_image_path = ""
     db_file = os.path.join(dir_path,'wariety.db')
     full_image_path = ""
     conn = sqlite3.connect(db_file)
@@ -405,15 +417,14 @@ def get_random_image_from_database():
     conn.close()
 
     max = len(result)
+
+    choice = random.randint(0, int(max+max*.5))
     try:
-        choice = random.randint(0, int(max+max*.5))
         full_image_path = os.path.abspath(result[choice][1])
-        logging.debug('get_random_image_from_database - full_image_path = {}'.format(full_image_path))
-        return full_image_path
     except:
-        full_image_path = get_random_image_from_any_source()
-        logging.debug('get_random_image_from_database - full_image_path = {}'.format(full_image_path))
-        return full_image_path
+        return get_random_image_from_any_source()
+    logging.debug('get_random_image_from_database - full_image_path = {}'.format(full_image_path))
+    return full_image_path
 
 def get_random_image_from_any_source():
     """Returns either full image path of a random image from the database"""
@@ -746,7 +757,7 @@ if __name__ == "__main__":
         path = get_latest_wallpaper_local()
         set_any_option = True
     if args.random:
-        path = get_random_image_from_database()
+        path = get_random_image()
         set_any_option = True
     if args.wikimedia:
         path = get_latest_wikimedia_wallpaper_remote()
