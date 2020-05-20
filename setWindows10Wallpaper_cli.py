@@ -350,7 +350,7 @@ def download_image(full_image_url, image_name):
     logging.debug('download_image({}, {})'.format(full_image_url, image_name))
 
     if use_proxy:
-        img_data = requests.get(full_image_url, proxies=proxies, timeout=15, verify=False)
+        img_data = requests.get(full_image_url, proxies=proxies, timeout=15, verify=False).content
     else:
         img_data = requests.get(full_image_url).content
     dir_path = os.path.join(os.environ['TEMP'],'WarietyWallpaperImages')
