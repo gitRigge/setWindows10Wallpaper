@@ -219,10 +219,34 @@ def database_maintenance():
 
     logging.debug('database_maintenance()')
 
+    # Check datgabase
     all_imagepaths = get_all_images_from_database()
     for imagepath in all_imagepaths:
         if not os.path.isfile(imagepath):
             delete_image_from_database(imagepath)
+            logging.debug('database_maintenance() - image not in folder, deleted')
+
+    # Check temporary folder
+    all_imagepaths = get_all_images_from_filesystem()
+    for imagepath in all_imagepaths:
+        if not exists_image_in_database(imagepath):
+            delete_image_from_database(imagepath)
+            logging.debug('database_maintenance() - image not in database, deleted')
+
+def get_all_images_from_filesystem():
+    """Reads the folder 'WarietyWallpaperImages' in the temporary
+    locations and returns a list of full image paths of all
+    images currently stored there
+    """
+
+    logging.debug('get_all_images_from_filesystem()')
+
+    dir_path = os.path.join(os.environ['TEMP'],'WarietyWallpaperImages')
+    all_full_image_paths = []
+    for my_file in os.listdir(dir_path):
+        if os.path.isfile(os.path.join(dir_path, my_file)):
+            all_full_image_paths.append(os.path.join(dir_path, my_file))
+    return all_full_image_paths
 
 def get_all_images_from_database():
     """Reads database and returns full image path of all
